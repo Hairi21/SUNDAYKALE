@@ -254,3 +254,12 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Aplikasi Kasir Siap!");
     renderProducts();
 });
+const sidebar = document.querySelector(".sidebar");
+
+const menuBtn = document.getElementById("menuBtn");
+
+menuBtn.addEventListener("click",function(){
+
+sidebar.classList.toggle("active");
+
+});
