@@ -47,6 +47,10 @@ function switchMenu(menuName, element) {
     } else if (menuName === 'kasir') {
         renderProducts();
     }
+    // Tutup sidebar otomatis di Android
+if (window.innerWidth <= 768) {
+    document.querySelector(".sidebar").classList.remove("active");
+}
 }
 
 // RENDER KATALOG KASIR
