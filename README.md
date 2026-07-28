@@ -1,2 +1,2 @@
-# SUNDAYKALE
-mesin kasir
+# SANDIKALE-project
+patner mewujudkan ide gila mu
