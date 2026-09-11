@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kasir & Pembukuan</title>
+<style>
+:root{--bg:#0b0d10;--panel:#15191f;--panel2:#1d232b;--line:#303741;--text:#f4f6f8;--muted:#9ca6b2;--accent:#fff;--danger:#ff6464;--ok:#66d19e}
+*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.app{display:flex;min-height:100vh}
+.sidebar{width:250px;background:#101318;border-right:1px solid var(--line);padding:18px;position:fixed;inset:0 auto 0 0;z-index:20}
+.logo{font-size:20px;font-weight:900;margin:4px 6px 20px}.logo span{color:#9da6b2}
+.nav button{display:block;width:100%;text-align:left;background:transparent;color:#b8c0ca;border:0;border-radius:10px;padding:12px;margin:4px 0}.nav button.active,.nav button:hover{background:#252b33;color:#fff}
+.main{margin-left:250px;width:calc(100% - 250px);padding:22px;max-width:1500px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.top h1{margin:0;font-size:26px}.hamb{display:none}
+.page{display:none}.page.active{display:block}.grid{display:grid;gap:14px}.cards{grid-template-columns:repeat(4,minmax(0,1fr))}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px}.card small,.muted{color:var(--muted)}.value{font-size:24px;font-weight:900;margin-top:7px}.green{color:var(--ok)}.red{color:var(--danger)}
+.two{grid-template-columns:1.3fr .7fr}.three{grid-template-columns:repeat(3,1fr)}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,select,textarea{width:100%;background:#0e1115;color:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;outline:none}input:focus,select:focus,textarea:focus{border-color:#737e8b}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.row3{grid-template-columns:repeat(3,1fr)}.formgrid{display:grid;gap:11px}.btn{border:1px solid var(--line);background:#252b33;color:#fff;border-radius:9px;padding:10px 13px}.btn.primary{background:#fff;color:#111;border-color:#fff;font-weight:800}.btn.danger{color:#ff8585}.btn.small{padding:7px 9px;font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:#aeb7c2;font-weight:700}.tablewrap{overflow:auto;max-height:540px}
+.totalbox{background:#0e1115;border:1px solid var(--line);padding:14px;border-radius:12px}.totalrow{display:flex;justify-content:space-between;padding:7px 0}.totalrow.big{font-size:20px;font-weight:900;border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+.cart-empty{padding:35px;text-align:center;color:var(--muted)}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#252b33;color:#cbd3dc;font-size:11px}
+.search{max-width:330px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.note{padding:11px 12px;border:1px dashed #414954;border-radius:10px;color:#aeb7c2;font-size:13px}
+.toast{position:fixed;right:18px;bottom:18px;background:#fff;color:#111;padding:12px 16px;border-radius:10px;font-weight:700;display:none;z-index:99}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:80;padding:16px}.modal.show{display:flex}.modalbox{width:min(720px,100%);max-height:90vh;overflow:auto;background:#15191f;border:1px solid var(--line);border-radius:16px;padding:18px}
+.kpi{font-size:12px;color:var(--muted)}.bar{height:8px;background:#292f37;border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;background:#fff}
+@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:translateX(0)}.main{margin:0;width:100%;padding:14px}.hamb{display:inline-flex}.cards{grid-template-columns:repeat(2,1fr)}.two,.three{grid-template-columns:1fr}.top{position:sticky;top:0;background:#0b0d10;padding:8px 0;z-index:10}.row3{grid-template-columns:1fr}}
+@media(max-width:520px){.cards{grid-template-columns:1fr 1fr}.value{font-size:19px}th,td{white-space:nowrap}.tablewrap{max-height:none}}
+
+.barcodebar{display:flex;gap:8px;margin:10px 0;align-items:center}.barcodebar input{flex:1;min-width:0}.scanmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:center;justify-content:center;padding:14px}.scanmodal.show{display:flex}.scanbox{width:min(520px,100%);background:#fff;color:#111;border-radius:16px;padding:16px}.scanbox video{display:block;width:100%;height:auto;max-height:65vh;object-fit:cover;border-radius:12px;background:#000}@media(max-width:600px){.barcodebar{flex-direction:column;align-items:stretch}.barcodebar button{width:100%}}
+</style>
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script><style>
+.barcode-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.barcode-tools input{flex:1;min-width:190px}
+.scan-box{display:none;position:fixed;inset:0;background:#000b;z-index:99999;align-items:center;justify-content:center;padding:14px}
+.scan-card{background:#fff;color:#111;border-radius:16px;padding:14px;width:min(520px,100%)}.scan-card video{width:100%;border-radius:10px;background:#000}
+</style></head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="logo">KASIR <span>& PEMBUKUAN</span></div>
+  <nav class="nav">
+    <button data-page="dashboard" class="active">📊 Dashboard</button>
+    <button data-page="kasir">🧾 Kasir</button>
+    <button data-page="custom">🎨 Custom Order</button>
+    <button data-page="produk">👕 Produk</button>
+    <button data-page="masuk">💰 Uang Masuk</button>
+    <button data-page="keluar">💸 Pengeluaran</button>
+    <button data-page="bahan">🛒 Pembelian Bahan</button>
+    <button data-page="laporan">📈 Laporan</button>
+    <button data-page="backup">⚙️ Data & Backup</button>
+  </nav>
+</aside>
+<main class="main">
+<header class="top"><div><button class="btn hamb" id="hamb">☰</button> <span id="pageTitle">Dashboard</span></div><div class="muted" id="today"></div></header>
+
+<section id="dashboard" class="page active">
+  <div class="grid cards">
+    <div class="card"><small>Uang Masuk</small><div class="value" id="dIncome">Rp0</div></div>
+    <div class="card"><small>Pengeluaran</small><div class="value red" id="dExpense">Rp0</div></div>
+    <div class="card"><small>Laba Bersih</small><div class="value green" id="dProfit">Rp0</div></div>
+    <div class="card"><small>Transaksi</small><div class="value" id="dCount">0</div></div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="panel"><div class="toolbar"><h3 style="margin:0">Ringkasan Bulan Berjalan</h3><span class="pill" id="monthLabel"></span></div><div id="monthly"></div></div>
+    <div class="panel"><h3 style="margin-top:0">Metode Pembayaran</h3><div id="methods"></div></div>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Transaksi Terbaru</h3><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No</th><th>Pelanggan</th><th>Kategori</th><th>Metode</th><th>Jumlah</th></tr></thead><tbody id="recent"></tbody></table></div></div>
+</section>
+
+<section id="kasir" class="page">
+ <div class="grid two">
+  <div class="panel">
+   <h3>Kasir</h3>
+   <div class="barcodebar">
+    <input id="barcodeInput" type="text" inputmode="text" autocomplete="off" placeholder="Scan / ketik kode produk lalu Enter">
+    <button class="btn primary" id="scanBarcodeBtn" type="button">📷 SCAN BARCODE</button>
+   </div>
+   <div id="scanHint" class="muted" style="margin:6px 0 12px">Scan barcode dengan kamera HP atau gunakan scanner USB/Bluetooth.</div>
+   <div class="formgrid">
+    <div class="row"><div><label>Pelanggan</label><input id="saleCustomer" placeholder="Nama pelanggan"></div><div><label>Metode Bayar</label><select id="saleMethod"><option>Tunai</option><option>Transfer</option><option>QRIS</option><option>Piutang</option><option>Lainnya</option></select></div></div>
+    <div class="row"><div><label>Produk</label><select id="saleProduct"></select></div><div><label>Qty</label><input id="saleQty" type="number" min="1" value="1"></div></div>
+    <div class="row"><div><label>Harga</label><input id="salePrice" type="number" value="0"></div><div><label>Catatan</label><input id="saleNote" placeholder="Ukuran/warna/ket."></div></div>
+    <button class="btn primary" id="addCart">+ Tambah ke Keranjang</button>
+   </div>
+  </div>
+  <div class="panel"><h3>Keranjang</h3><div id="cart"></div><div class="totalbox"><div class="totalrow"><span>Total</span><b id="cartTotal">Rp0</b></div><div class="row"><div><label>Dibayar</label><input id="paid" type="number" value="0"></div><div><label>Kembalian</label><input id="change" type="number" value="0" readonly></div></div><button class="btn primary" style="width:100%;margin-top:10px" id="saveSale">Simpan Transaksi</button></div></div>
+ </div>
+</section>
+
+<section id="custom" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Custom Order</h3><button class="btn primary" id="newCustom">+ Order Baru</button></div><div class="tablewrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pelanggan</th><th>HP</th><th>Produk</th><th>Qty</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody id="customTable"></tbody></table></div></div>
+</section>
+
+<section id="produk" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Master Produk</h3><button class="btn primary" id="newProduct">+ Produk</button></div><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Kategori</th><th>Harga Jual</th><th>Modal</th><th>Stok</th><th></th></tr></thead><tbody id="productTable"></tbody></table></div></div>
+</section>
+
+<section id="masuk" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Uang Masuk</h3><button class="btn primary" id="newIncome">+ Manual</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No</th><th>Pelanggan</th><th>Keterangan</th><th>Kategori</th><th>Metode</th><th>Jumlah</th><th></th></tr></thead><tbody id="incomeTable"></tbody></table></div></div>
+</section>
+
+<section id="keluar" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Pengeluaran Operasional</h3><button class="btn primary" id="newExpense">+ Pengeluaran</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No</th><th>Keterangan</th><th>Kategori</th><th>Metode</th><th>Jumlah</th><th></th></tr></thead><tbody id="expenseTable"></tbody></table></div></div>
+</section>
+
+<section id="bahan" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Pembelian Bahan</h3><button class="btn primary" id="newPurchase">+ Pembelian</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No</th><th>Supplier</th><th>Bahan</th><th>Kategori</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Total</th><th></th></tr></thead><tbody id="purchaseTable"></tbody></table></div></div>
+</section>
+
+<section id="laporan" class="page">
+ <div class="panel"><div class="toolbar"><h3 style="margin:0">Laporan Keuangan</h3><div class="actions"><input class="search" type="month" id="reportMonth"><button class="btn primary" id="exportPdf">Export PDF</button></div></div><div class="grid cards" id="reportCards"></div><div class="panel" style="margin-top:14px;background:#0e1115"><h3>Rincian</h3><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>No</th><th>Keterangan</th><th>Masuk</th><th>Keluar</th></tr></thead><tbody id="reportTable"></tbody></table></div></div></div>
+</section>
+
+<section id="backup" class="page">
+ <div class="panel"><h3>Data & Backup</h3><p class="muted">Data disimpan di browser perangkat ini (localStorage). Gunakan backup secara berkala.</p><div class="actions"><button class="btn primary" id="backupBtn">Download Backup JSON</button><button class="btn" id="importBtn">Import Backup</button><input type="file" id="fileImport" accept=".json" hidden></div><div class="note" style="margin-top:14px">Untuk versi online multi-perangkat, database Supabase dapat ditambahkan pada tahap berikutnya tanpa mengubah alur kasir.</div><button class="btn danger" style="margin-top:18px" id="resetBtn">Hapus Semua Data</button></div>
+</section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<div id="barcodeModal" class="scanmodal">
+ <div class="scanbox">
+  <h3>📷 Scan Barcode</h3>
+  <video id="barcodeVideo" playsinline autoplay></video>
+  <div id="barcodeStatus" class="muted" style="margin-top:8px">Arahkan kamera belakang HP ke barcode…</div>
+  <button class="btn" id="closeScanner" type="button" style="width:100%;margin-top:12px">Tutup Kamera</button>
+ </div>
+</div>
+<div class="modal" id="modal"><div class="modalbox" id="modalBox"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const KEY='sndkl_kasir_v1';
+const defaultData={
+ products:[
+  {id:'p1',name:'Kaos 30s Pendek',cat:'Kaos',price:50000,cost:40000,stock:0},
+  {id:'p2',name:'Kaos 30s Panjang',cat:'Kaos',price:60000,cost:48000,stock:0},
+  {id:'p3',name:'Kaos 24s Pendek',cat:'Kaos',price:55000,cost:45000,stock:0},
+  {id:'p4',name:'Kaos 24s Panjang',cat:'Kaos',price:65000,cost:52000,stock:0},
+  {id:'p5',name:'DTF Logo',cat:'DTF',price:5000,cost:0,stock:0},
+  {id:'p6',name:'DTF A4',cat:'DTF',price:25000,cost:0,stock:0},
+  {id:'p7',name:'DTF A3',cat:'DTF',price:40000,cost:0,stock:0}
+ ],
+ income:[], expenses:[], purchases:[], custom:[], seq:{sale:0,income:0,expense:0,purchase:0,custom:0}
+};
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||structuredClone(defaultData);
+let cart=[];
+const $=id=>document.getElementById(id);
+const money=n=>'Rp'+Number(n||0).toLocaleString('id-ID');
+const today=()=>new Date().toISOString().slice(0,10);
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderAll()};
+const toast=m=>{let t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800)};
+const next=(type,prefix)=>{db.seq[type]=(db.seq[type]||0)+1;return prefix+'-'+today().replaceAll('-','')+'-'+String(db.seq[type]).padStart(3,'0')};
+
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.page));
+$('hamb').onclick=()=>$('sidebar').classList.toggle('open');
+function go(page){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(page).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===page));$('pageTitle').textContent=document.querySelector(`[data-page="${page}"]`).textContent.replace(/^[^\s]+\s/,'');$('sidebar').classList.remove('open');if(page==='kasir')fillProducts();}
+
+function fillProducts(){ $('saleProduct').innerHTML=db.products.map(p=>`<option value="${p.id}">${esc(p.name)} — ${money(p.price)} (stok ${p.stock})</option>`).join(''); updateSalePrice();}
+$('saleProduct').onchange=updateSalePrice;
+function updateSalePrice(){let p=db.products.find(x=>x.id==$('saleProduct').value);if(p)$('salePrice').value=p.price}
+$('addCart').onclick=()=>{let p=db.products.find(x=>x.id==$('saleProduct').value);if(!p)return;let qty=Math.max(1,+$('saleQty').value||1),price=+$('salePrice').value||0;cart.push({id:p.id,name:p.name,qty,price,note:$('saleNote').value});$('saleQty').value=1;$('saleNote').value='';renderCart()};
+function renderCart(){let el=$('cart');if(!cart.length){el.innerHTML='<div class="cart-empty">Keranjang masih kosong.</div>'}else el.innerHTML=cart.map((x,i)=>`<div class="totalrow"><span>${esc(x.name)} × ${x.qty}<br><small class="muted">${esc(x.note||'')}</small></span><span>${money(x.qty*x.price)} <button class="btn small danger" onclick="cart.splice(${i},1);renderCart()">×</button></span></div>`).join('');let t=cart.reduce((a,x)=>a+x.qty*x.price,0);$('cartTotal').textContent=money(t);$('change').value=Math.max(0,(+$('paid').value||0)-t)}
+$('paid').oninput=renderCart;
+$('saveSale').onclick=()=>{if(!cart.length)return toast('Keranjang kosong');let total=cart.reduce((a,x)=>a+x.qty*x.price,0),paid=+$('paid').value||0;if($('saleMethod').value!=='Piutang'&&paid<total)return toast('Nominal dibayar kurang');let no=next('sale','TRX');db.income.push({date:today(),no,customer:$('saleCustomer').value||'Umum',note:cart.map(x=>`${x.name} x${x.qty}${x.note?' ('+x.note+')':''}`).join(', '),cat:'Penjualan Produk',method:$('saleMethod').value,amount:total,items:structuredClone(cart)});cart.forEach(x=>{let p=db.products.find(y=>y.id===x.id);if(p)p.stock-=x.qty});cart=[];$('saleCustomer').value='';$('paid').value=0;save();toast('Transaksi tersimpan');go('dashboard')};
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function renderDashboard(){
+ let inc=db.income.reduce((a,x)=>a+x.amount,0),out=db.expenses.reduce((a,x)=>a+x.amount,0)+db.purchases.reduce((a,x)=>a+x.total,0);
+ $('dIncome').textContent=money(inc);$('dExpense').textContent=money(out);$('dProfit').textContent=money(inc-out);$('dCount').textContent=db.income.length;
+ let ym=today().slice(0,7);$('monthLabel').textContent=ym;
+ let mi=db.income.filter(x=>x.date?.slice(0,7)===ym).reduce((a,x)=>a+x.amount,0),me=db.expenses.filter(x=>x.date?.slice(0,7)===ym).reduce((a,x)=>a+x.amount,0),mp=db.purchases.filter(x=>x.date?.slice(0,7)===ym).reduce((a,x)=>a+x.total,0);
+ $('monthly').innerHTML=`<div class="totalrow"><span>Uang Masuk</span><b>${money(mi)}</b></div><div class="totalrow"><span>Operasional</span><b>${money(me)}</b></div><div class="totalrow"><span>Pembelian Bahan</span><b>${money(mp)}</b></div><div class="totalrow big"><span>Laba</span><b class="green">${money(mi-me-mp)}</b></div>`;
+ let methods={};db.income.forEach(x=>methods[x.method]=(methods[x.method]||0)+x.amount);let max=Math.max(1,...Object.values(methods));$('methods').innerHTML=Object.entries(methods).map(([k,v])=>`<div style="margin:12px 0"><div class="totalrow"><span>${esc(k)}</span><b>${money(v)}</b></div><div class="bar"><i style="width:${v/max*100}%"></i></div></div>`).join('')||'<span class="muted">Belum ada data.</span>';
+ $('recent').innerHTML=[...db.income].reverse().slice(0,10).map(x=>`<tr><td>${x.date}</td><td>${esc(x.no)}</td><td>${esc(x.customer)}</td><td>${esc(x.cat)}</td><td>${esc(x.method)}</td><td>${money(x.amount)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Belum ada transaksi.</td></tr>';
+}
+function renderProducts(){$('productTable').innerHTML=db.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td>${money(p.price)}</td><td>${money(p.cost)}</td><td>${p.stock}</td><td><button class="btn small" onclick="editProduct('${p.id}')">Edit</button> <button class="btn small danger" onclick="del('products','${p.id}')">Hapus</button></td></tr>`).join('')}
+function renderIncome(){$('incomeTable').innerHTML=[...db.income].reverse().map((x,i)=>`<tr><td>${x.date}</td><td>${esc(x.no)}</td><td>${esc(x.customer)}</td><td>${esc(x.note)}</td><td>${esc(x.cat)}</td><td>${esc(x.method)}</td><td>${money(x.amount)}</td><td><button class="btn small danger" onclick="del('income','${x.no}')">Hapus</button></td></tr>`).join('')}
+function renderExpenses(){$('expenseTable').innerHTML=[...db.expenses].reverse().map(x=>`<tr><td>${x.date}</td><td>${esc(x.no)}</td><td>${esc(x.note)}</td><td>${esc(x.cat)}</td><td>${esc(x.method)}</td><td>${money(x.amount)}</td><td><button class="btn small danger" onclick="del('expenses','${x.no}')">Hapus</button></td></tr>`).join('')}
+function renderPurchases(){$('purchaseTable').innerHTML=[...db.purchases].reverse().map(x=>`<tr><td>${x.date}</td><td>${esc(x.no)}</td><td>${esc(x.supplier)}</td><td>${esc(x.material)}</td><td>${esc(x.cat)}</td><td>${x.qty}</td><td>${esc(x.unit)}</td><td>${money(x.price)}</td><td>${money(x.total)}</td><td><button class="btn small danger" onclick="del('purchases','${x.no}')">Hapus</button></td></tr>`).join('')}
+function renderCustom(){$('customTable').innerHTML=[...db.custom].reverse().map(x=>`<tr><td>${esc(x.no)}</td><td>${x.date}</td><td>${esc(x.customer)}</td><td>${esc(x.phone)}</td><td>${esc(x.product)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td><select onchange="setCustomStatus('${x.no}',this.value)">${['Pesanan','Desain','Produksi','Selesai','Diambil','Batal'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="btn small danger" onclick="del('custom','${x.no}')">Hapus</button></td></tr>`).join('')}
+function setCustomStatus(no,s){let x=db.custom.find(x=>x.no===no);if(x){x.status=s;save();toast('Status diperbarui')}}
+function del(type,id){if(!confirm('Hapus data ini?'))return;db[type]=db[type].filter(x=>(x.no||x.id)!==id);save();toast('Data dihapus')}
+function renderReport(){let ym=$('reportMonth').value||today().slice(0,7);let rows=[...db.income.filter(x=>x.date?.slice(0,7)===ym).map(x=>({date:x.date,type:'Masuk',no:x.no,note:x.note||x.cat,in:x.amount,out:0})),...db.expenses.filter(x=>x.date?.slice(0,7)===ym).map(x=>({date:x.date,type:'Operasional',no:x.no,note:x.note,in:0,out:x.amount})),...db.purchases.filter(x=>x.date?.slice(0,7)===ym).map(x=>({date:x.date,type:'Bahan',no:x.no,note:x.material,in:0,out:x.total}))].sort((a,b)=>a.date.localeCompare(b.date));let ins=rows.reduce((a,x)=>a+x.in,0),outs=rows.reduce((a,x)=>a+x.out,0);$('reportCards').innerHTML=`<div class="card"><small>Masuk</small><div class="value">${money(ins)}</div></div><div class="card"><small>Keluar</small><div class="value red">${money(outs)}</div></div><div class="card"><small>Laba</small><div class="value green">${money(ins-outs)}</div></div><div class="card"><small>Margin</small><div class="value">${ins?((ins-outs)/ins*100).toFixed(1):0}%</div></div>`;$('reportTable').innerHTML=rows.map(x=>`<tr><td>${x.date}</td><td>${x.type}</td><td>${esc(x.no)}</td><td>${esc(x.note)}</td><td>${x.in?money(x.in):'-'}</td><td>${x.out?money(x.out):'-'}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Belum ada data.</td></tr>'}
+$('reportMonth').value=today().slice(0,7);$('reportMonth').onchange=renderReport;
+
+function modal(title,body,onSave){$('modalBox').innerHTML=`<div class="toolbar"><h3 style="margin:0">${title}</h3><button class="btn" onclick="closeModal()">Tutup</button></div>${body}<div class="actions" style="margin-top:15px"><button class="btn primary" id="modalSave">Simpan</button></div>`;$('modal').classList.add('show');$('modalSave').onclick=()=>{if(onSave())closeModal()}}
+function closeModal(){$('modal').classList.remove('show')}
+
+$('newProduct').onclick=()=>modal('Tambah Produk',`<div class="formgrid"><div><label>Nama Produk</label><input id="mName"></div><div class="row"><div><label>Kategori</label><input id="mCat" value="Kaos"></div><div><label>Stok</label><input id="mStock" type="number" value="0"></div></div><div class="row"><div><label>Harga Jual</label><input id="mPrice" type="number"></div><div><label>Modal</label><input id="mCost" type="number"></div></div></div>`,()=>{if(!$('mName').value)return false;db.products.push({id:crypto.randomUUID(),name:$('mName').value,cat:$('mCat').value,price:+$('mPrice').value||0,cost:+$('mCost').value||0,stock:+$('mStock').value||0});save();return true});
+window.editProduct=id=>{let p=db.products.find(x=>x.id===id);modal('Edit Produk',`<div class="formgrid"><div><label>Nama</label><input id="mName" value="${esc(p.name)}"></div><div class="row"><div><label>Kategori</label><input id="mCat" value="${esc(p.cat)}"></div><div><label>Stok</label><input id="mStock" type="number" value="${p.stock}"></div></div><div class="row"><div><label>Harga</label><input id="mPrice" type="number" value="${p.price}"></div><div><label>Modal</label><input id="mCost" type="number" value="${p.cost}"></div></div></div>`,()=>{p.name=$('mName').value;p.cat=$('mCat').value;p.stock=+$('mStock').value||0;p.price=+$('mPrice').value||0;p.cost=+$('mCost').value||0;save();return true})};
+$('newIncome').onclick=()=>modal('Uang Masuk Manual',`<div class="formgrid"><div class="row"><div><label>Tanggal</label><input id="mDate" type="date" value="${today()}"></div><div><label>Pelanggan</label><input id="mCustomer"></div></div><div><label>Keterangan</label><input id="mNote"></div><div class="row3"><div><label>Kategori</label><select id="mCat"><option>Penjualan Kaos</option><option>Penjualan Produk</option><option>Lainnya</option></select></div><div><label>Metode</label><select id="mMethod"><option>Tunai</option><option>Transfer</option><option>QRIS</option><option>Piutang</option><option>Lainnya</option></select></div><div><label>Jumlah</label><input id="mAmount" type="number"></div></div></div>`,()=>{let a=+$('mAmount').value||0;if(!a)return false;db.income.push({date:$('mDate').value,no:next('income','IN'),customer:$('mCustomer').value,note:$('mNote').value,cat:$('mCat').value,method:$('mMethod').value,amount:a});save();return true});
+$('newExpense').onclick=()=>modal('Pengeluaran Operasional',`<div class="formgrid"><div class="row"><div><label>Tanggal</label><input id="mDate" type="date" value="${today()}"></div><div><label>Metode</label><select id="mMethod"><option>Tunai</option><option>Transfer</option><option>QRIS</option><option>Lainnya</option></select></div></div><div><label>Keterangan</label><input id="mNote"></div><div class="row"><div><label>Kategori</label><select id="mCat"><option>Listrik</option><option>Internet</option><option>Transportasi</option><option>Marketing</option><option>Sewa</option><option>Gaji</option><option>Lainnya</option></select></div><div><label>Jumlah</label><input id="mAmount" type="number"></div></div></div>`,()=>{let a=+$('mAmount').value||0;if(!a)return false;db.expenses.push({date:$('mDate').value,no:next('expense','OUT'),note:$('mNote').value,cat:$('mCat').value,method:$('mMethod').value,amount:a});save();return true});
+$('newPurchase').onclick=()=>modal('Pembelian Bahan',`<div class="formgrid"><div class="row"><div><label>Tanggal</label><input id="mDate" type="date" value="${today()}"></div><div><label>Supplier</label><input id="mSupplier"></div></div><div class="row"><div><label>Bahan</label><input id="mMaterial"></div><div><label>Kategori</label><select id="mCat"><option>Kaos</option><option>Bahan Sablon</option><option>Lainnya</option></select></div></div><div class="row3"><div><label>Qty</label><input id="mQty" type="number" step="0.01"></div><div><label>Satuan</label><input id="mUnit" value="pcs"></div><div><label>Harga Satuan</label><input id="mPrice" type="number"></div></div><div class="note">Total = Qty × Harga Satuan.</div></div>`,()=>{let q=+$('mQty').value||0,p=+$('mPrice').value||0;if(!q||!p)return false;db.purchases.push({date:$('mDate').value,no:next('purchase','BUY'),supplier:$('mSupplier').value,material:$('mMaterial').value,cat:$('mCat').value,qty:q,unit:$('mUnit').value,price:p,total:q*p});save();return true});
+$('newCustom').onclick=()=>modal('Custom Order',`<div class="formgrid"><div class="row"><div><label>Tanggal</label><input id="mDate" type="date" value="${today()}"></div><div><label>Nama Pelanggan</label><input id="mCustomer"></div></div><div class="row"><div><label>No. HP</label><input id="mPhone"></div><div><label>Produk/Model</label><input id="mProduct" placeholder="Kaos 24s hitam"></div></div><div class="row3"><div><label>Qty</label><input id="mQty" type="number" value="1"></div><div><label>Total</label><input id="mTotal" type="number"></div><div><label>DP</label><input id="mDp" type="number" value="0"></div></div><div class="row"><div><label>Ukuran Desain</label><select id="mSize"><option>A5</option><option>A4</option><option>A3</option><option>Custom</option></select></div><div><label>Status</label><select id="mStatus"><option>Pesanan</option><option>Desain</option><option>Produksi</option><option>Selesai</option></select></div></div><div><label>Catatan</label><textarea id="mNote" rows="3" placeholder="warna, size baju, posisi sablon, dll."></textarea></div></div>`,()=>{let q=+$('mQty').value||1,t=+$('mTotal').value||0;if(!$('mCustomer').value||!t)return false;db.custom.push({date:$('mDate').value,no:next('custom','CUS'),customer:$('mCustomer').value,phone:$('mPhone').value,product:$('mProduct').value,qty:q,total:t,dp:+$('mDp').value||0,size:$('mSize').value,status:$('mStatus').value,note:$('mNote').value});save();return true});
+
+$('backupBtn').onclick=()=>{let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='backup-kasir-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
+$('importBtn').onclick=()=>$('fileImport').click();
+$('fileImport').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();toast('Backup berhasil diimport')}catch{toast('File backup tidak valid')}};r.readAsText(f)};
+$('resetBtn').onclick=()=>{if(confirm('Hapus SEMUA data?')){db=structuredClone(defaultData);save();toast('Data direset')}};
+$('exportPdf').onclick=async ()=>{
+  const ym=$('reportMonth').value||today().slice(0,7);
+  const rows=[
+    ...db.income.filter(x=>x.date?.slice(0,7)===ym).map(x=>[x.date,'Masuk',x.no,x.customer||'-',x.note||x.cat,x.method||'-',x.amount,0]),
+    ...db.expenses.filter(x=>x.date?.slice(0,7)===ym).map(x=>[x.date,'Operasional',x.no,'-',x.note||x.cat,x.method||'-',0,x.amount]),
+    ...db.purchases.filter(x=>x.date?.slice(0,7)===ym).map(x=>[x.date,'Pembelian Bahan',x.no,x.supplier||'-',x.material||'-',x.unit||'-',0,x.total])
+  ].sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+
+  const masuk=rows.reduce((a,x)=>a+Number(x[6]||0),0);
+  const keluar=rows.reduce((a,x)=>a+Number(x[7]||0),0);
+  const laba=masuk-keluar;
+  const margin=masuk?(laba/masuk*100):0;
+
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    toast('PDF library belum termuat. Periksa koneksi internet sekali lalu coba lagi.');
+    return;
+  }
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(18); doc.setFont(undefined,'bold');
+  doc.text('LAPORAN KEUANGAN',14,15);
+  doc.setFontSize(11); doc.setFont(undefined,'normal');
+  doc.text('Kasir & Pembukuan',14,22);
+  doc.text('Periode: '+ym,14,28);
+
+  doc.setFontSize(9);
+  doc.text('Dibuat: '+new Date().toLocaleString('id-ID'),pageW-14,15,{align:'right'});
+
+  // KPI summary
+  const cards=[
+    ['TOTAL UANG MASUK',money(masuk)],
+    ['TOTAL PENGELUARAN',money(keluar)],
+    ['LABA BERSIH',money(laba)],
+    ['MARGIN',margin.toFixed(1)+'%']
+  ];
+  let x=14, y=34, cw=(pageW-28-18)/4;
+  cards.forEach(([label,val],i)=>{
+    const xx=x+i*(cw+6);
+    doc.roundedRect(xx,y,cw,18,2,2);
+    doc.setFontSize(7); doc.setFont(undefined,'normal'); doc.text(label,xx+4,y+6);
+    doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text(val,xx+4,y+13);
+  });
+
+  const body=rows.map(r=>[
+    r[0],r[1],r[2],r[3],r[4],r[5],
+    r[6]?money(r[6]):'-',
+    r[7]?money(r[7]):'-'
+  ]);
+
+  doc.autoTable({
+    startY:58,
+    head:[['Tanggal','Jenis','No.','Pelanggan / Supplier','Keterangan / Bahan','Metode / Satuan','Masuk','Keluar']],
+    body,
+    theme:'grid',
+    styles:{fontSize:7,cellPadding:2,overflow:'linebreak',valign:'middle'},
+    headStyles:{fontStyle:'bold'},
+    columnStyles:{
+      0:{cellWidth:24},1:{cellWidth:28},2:{cellWidth:27},3:{cellWidth:37},
+      4:{cellWidth:50},5:{cellWidth:30},6:{cellWidth:31,halign:'right'},7:{cellWidth:31,halign:'right'}
+    },
+    didDrawPage:(data)=>{
+      doc.setFontSize(7);
+      doc.text('SANDIKALE • Laporan Keuangan',14,doc.internal.pageSize.getHeight()-7);
+      doc.text('Halaman '+doc.internal.getNumberOfPages(),pageW-14,doc.internal.pageSize.getHeight()-7,{align:'right'});
+    }
+  });
+
+  let fy=(doc.lastAutoTable?.finalY||58)+8;
+  if(fy>doc.internal.pageSize.getHeight()-35){doc.addPage();fy=15;}
+  doc.setFontSize(9);doc.setFont(undefined,'bold');
+  doc.text('RINGKASAN',14,fy);
+  doc.setFont(undefined,'normal');doc.setFontSize(8);
+  doc.text('Uang Masuk: '+money(masuk),14,fy+6);
+  doc.text('Pengeluaran: '+money(keluar),14,fy+12);
+  doc.text('Laba Bersih: '+money(laba),14,fy+18);
+  doc.text('Margin: '+margin.toFixed(1)+'%',14,fy+24);
+
+  doc.save('laporan-keuangan-'+ym+'.pdf');
+  toast('PDF berhasil dibuat');
+};
+
+function renderAll(){renderDashboard();renderProducts();renderIncome();renderExpenses();renderPurchases();renderCustom();renderReport();if($('saleProduct'))fillProducts()}
+$('today').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+renderAll();renderCart();
+</script>
+<div id="scanBox" class="scan-box"><div class="scan-card"><h3>Scan Barcode</h3><video id="barcodeVideo" playsinline></video><p id="scanStatus">Arahkan kamera ke barcode…</p><button class="btn" onclick="stopBarcodeScanner()">Tutup</button></div></div><script>
+let sndklReader=null,sndklControls=null;
+function focusBarcodeInput(){const e=document.getElementById('barcodeInput');if(e){e.focus();e.select()}}
+function sndklProducts(){try{return Array.isArray(db.products)?db.products:[]}catch(e){return[]}}
+function sndklFindProduct(code){code=String(code||'').trim().toLowerCase();return sndklProducts().find(p=>String(p.code||p.kode||p.barcode||'').trim().toLowerCase()===code)}
+function sndklAddByCode(code){
+ const p=sndklFindProduct(code); if(!p){alert('Kode produk "'+code+'" tidak ditemukan.');return}
+ const names=['addToCart','tambahKeKeranjang','addProductToCart','addItem'];
+ for(const n of names) if(typeof window[n]==='function'){
+   try{window[n](p.id);return}catch(e){} try{window[n](p);return}catch(e){}
+ }
+ try{
+   if(Array.isArray(cart)){let x=cart.find(a=>String(a.productId||a.id)===String(p.id));
+    if(x)x.qty=(x.qty||1)+1;else cart.push({productId:p.id,id:p.id,name:p.name||p.nama,price:Number(p.price||p.harga||0),qty:1});
+    if(typeof renderCart==='function')renderCart();if(typeof saveDB==='function')saveDB();
+   }
+ }catch(e){}
+}
+document.addEventListener('DOMContentLoaded',()=>{let e=document.getElementById('barcodeInput');if(e)e.addEventListener('keydown',x=>{if(x.key==='Enter'){x.preventDefault();let c=e.value.trim();if(c){sndklAddByCode(c);e.value=''}}})});
+async function startBarcodeScanner(){
+ const box=document.getElementById('scanBox'),video=document.getElementById('barcodeVideo'),status=document.getElementById('scanStatus');box.style.display='flex';
+ if(!window.ZXing){status.textContent='Scanner kamera tidak tersedia. Gunakan scanner USB/Bluetooth atau kode manual.';return}
+ try{
+  sndklReader=new ZXing.BrowserMultiFormatReader();status.textContent='Meminta izin kamera…';
+  sndklControls=await sndklReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}},audio:false},video,(result)=>{
+   if(result){let c=result.getText();status.textContent='Terdeteksi: '+c;sndklAddByCode(c);stopBarcodeScanner();setTimeout(focusBarcodeInput,150)}
+  });
+ }catch(e){status.textContent='Kamera gagal dibuka. Gunakan HTTPS/localhost dan izinkan kamera.'}
+}
+function stopBarcodeScanner(){
+ try{if(sndklControls&&sndklControls.stop)sndklControls.stop();if(sndklReader&&sndklReader.reset)sndklReader.reset()}catch(e){}
+ const v=document.getElementById('barcodeVideo');if(v&&v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null}
+ document.getElementById('scanBox').style.display='none';sndklControls=null;sndklReader=null
+}
+</script>
+<script>
+let sndklScanner=null,sndklScannerControls=null;
+function sndklFindByCode(code){code=String(code||'').trim().toLowerCase();return db.products.find(p=>String(p.code||p.kode||p.barcode||'').toLowerCase()===code)||null}
+function sndklAddScanned(code){const p=sndklFindByCode(code);if(!p){toast('Kode '+code+' tidak ditemukan. Tambahkan kode pada produk.');return false} cart.push({id:p.id,name:p.name,qty:1,price:p.price,note:''});renderCart();toast(p.name+' ditambahkan');return true}
+function sndklHandleCode(){const el=$('barcodeInput');const code=el.value.trim();if(code){sndklAddScanned(code);el.value='';}el.focus()}
+async function sndklStartScanner(){const modal=$('barcodeModal'),video=$('barcodeVideo'),status=$('barcodeStatus');modal.classList.add('show');status.textContent='Meminta izin kamera…';if(!window.ZXing){status.textContent='Library scanner tidak tersedia. Gunakan input kode atau scanner USB/Bluetooth.';return}try{sndklScanner=new ZXing.BrowserMultiFormatReader();sndklScannerControls=await sndklScanner.decodeFromConstraints({video:{facingMode:{ideal:'environment'}},audio:false},video,(result,err)=>{if(result){const code=result.getText();status.textContent='Terdeteksi: '+code;if(sndklAddScanned(code))sndklStopScanner();}})}catch(e){status.textContent='Kamera tidak bisa dibuka. Izinkan akses kamera dan buka aplikasi melalui HTTPS/localhost.'}}
+function sndklStopScanner(){try{if(sndklScannerControls?.stop)sndklScannerControls.stop();if(sndklScanner?.reset)sndklScanner.reset()}catch(e){};if($('barcodeVideo')?.srcObject){$('barcodeVideo').srcObject.getTracks().forEach(t=>t.stop());$('barcodeVideo').srcObject=null}$('barcodeModal').classList.remove('show');$('barcodeInput').focus()}
+$('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sndklHandleCode()}});$('scanBarcodeBtn').onclick=sndklStartScanner;$('closeScanner').onclick=sndklStopScanner;
+</script>
+
+<script>
+/* === AUTO PRODUCT CODE / BARCODE === */
+function sndklMakeCode(name, id){
+  const n=String(name||'PROD').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const base=(n.replace(/-/g,'').slice(0,6)||'PROD');
+  const tail=String(id||Date.now()).replace(/\D/g,'').slice(-4).padStart(4,'0');
+  return 'SND-'+base+'-'+tail;
+}
+function sndklEnsureProductCodes(){
+  try{
+    if(typeof db==='undefined'||!Array.isArray(db.products)) return;
+    let changed=false;
+    db.products.forEach(p=>{
+      if(!p.code && !p.kode && !p.barcode){
+        p.code=sndklMakeCode(p.name||p.nama,p.id);
+        changed=true;
+      }
+    });
+    if(changed){
+      if(typeof saveDB==='function') saveDB();
+      else localStorage.setItem('sndkl_kasir_v1',JSON.stringify(db));
+    }
+  }catch(e){}
+}
+function sndklPrintBarcode(productId){
+  const p=(db.products||[]).find(x=>String(x.id)===String(productId));
+  if(!p){alert('Produk tidak ditemukan');return;}
+  const code=p.code||p.kode||p.barcode;
+  if(!code){alert('Kode belum tersedia');return;}
+  const w=window.open('','_blank','width=500,height=650');
+  w.document.write('<html><head><title>Label Barcode</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h3>'+String(p.name||p.nama||'Produk').replace(/</g,'&lt;')+'</h3><svg id="bc"></svg><p>'+code+'</p><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>window.onload=function(){JsBarcode("#bc",'+JSON.stringify(code)+',{format:"CODE128",displayValue:true,height:90,width:2,margin:20});setTimeout(function(){window.print()},300)}<\/script></body></html>');
+  w.document.close();
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(sndklEnsureProductCodes,300));
+</script>
+</body>
+</html>
